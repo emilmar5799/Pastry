@@ -1,73 +1,72 @@
-# React + TypeScript + Vite
+# PastryFlora - Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Esta es la aplicación Frontend (Cliente) para el sistema de gestión de Pastelería Flora, construida con **React**, **TypeScript**, **Vite** y **Tailwind CSS**.
 
-Currently, two official plugins are available:
+## 🚀 Requisitos Previos
+- [Node.js](https://nodejs.org/) v16 o superior.
+- Haber inicializado el Backend de PastryFlora.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠 Instalación y Ejecución
 
-## React Compiler
+1. **Instalar dependencias:**
+   Dentro del directorio `PastryFloraFront`, ejecuta:
+   ```bash
+   npm install
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **Configurar variables de entorno:**
+   Copia el archivo `.env.example` y renómbralo a `.env`. Define la URL de la API del backend:
+   ```env
+   VITE_API_URL=http://localhost:3000/api
+   ```
 
-## Expanding the ESLint configuration
+3. **Ejecutar en entorno de Desarrollo:**
+   Vite iniciará un servidor de desarrollo rápido, generalmente en `http://localhost:5173`.
+   ```bash
+   npm run dev
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+4. **Construir para Producción:**
+   ```bash
+   npm run build
+   npm run preview
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📂 Estructura del Proyecto
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+El código base se encuentra en `src/`:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **`App.tsx` / `main.tsx`**: Puntos de entrada de la aplicación.
+- **`api/` y `services/`**: Lógica para conectarse al servidor Backend (Axios, Fetch).
+- **`components/`**: Componentes visuales reutilizables (Botones, Tablas, Layout principal, Modales).
+- **`pages/`**: Vistas completas de la aplicación (Home, Login, Ventas, etc.).
+- **`routes/`**: Configuración de React Router y protección de rutas.
+- **`context/` / `hooks/`**: Manejo del estado global de la aplicación (ej. Contexto de Autenticación para `useAuth()`).
+- **`types/`**: Interfaces TypeScript de los modelos (Product, Sale, User, Role...).
+- **`utils/`**: Funciones de ayuda generales.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🔗 Rutas y Vistas de la Aplicación
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+La navegación principal es manejada por `React Router` en `src/routes/AppRouter.tsx`:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Públicas
+*   **`/login`** - Pantalla de inicio de sesión.
+*   **`*`** - Vista de error 404 para rutas no encontradas.
+
+### Privadas (Requieren Autenticación)
+*   **`/`** - Tablero o Home principal.
+*   **`/sales`** - Listado de ventas rápidas de sucursal.
+    *   `/sales/new` - Nueva venta en POS.
+    *   `/sales/:id` - Detalles e impresión de ticket de la venta.
+*   **`/orders`** - Listado de reservas / pedidos grandes.
+    *   `/orders/new` - Formulario de nueva reserva.
+    *   `/orders/:id` - Detalle de reserva.
+    *   `/orders/:id/edit` - Editar datos funcionales de una reserva.
+*   **`/refill`** - Pantalla para control de producción y distribución interna (roles ADMIN, SUPERVISOR, REFILL, SELLER).
+    *   `/refill/:id` - Detalle de un relleno o reabastecimiento.
+    *   Permite control específico en `/refill/:id/add-products` (solo ADMIN/SUPERVISOR).
+
+### Protegidas (Solo Administración / Supervisores)
+*   **`/products`** - (Admin, Supervisor) Catálogo CRUD de productos.
+*   **`/reports`** - (Admin) Gráficos e indicadores de ventas y rentabilidad.
+*   **`/users`** - (Admin) Panel de control de personal, usuarios y contraseñas.
