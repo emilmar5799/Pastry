@@ -5,6 +5,7 @@ export interface User {
   email: string;
   password: string;
   role: UserRole;
+  salary?: number;
   active: boolean;
   created_at: Date;
 }

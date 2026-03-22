@@ -17,8 +17,10 @@ import SaleDetail from '../pages/sales/SaleDetail'
 import OrdersPage from '../pages/orders/Orders'
 import OrderForm from '../pages/orders/OrderForm'
 import OrderDetail from '../pages/orders/OrderDetail'
+import OrderFill from '../pages/orders/OrderFill'
 import RefillDetailPage from '../pages/refill/RefillDetail'
 import RefillFormPage from '../pages/refill/RefillForm'
+import Customers from '../pages/customers/Customers'
 
 import Login from '../pages/auth/Login'
 import NotFound from '../pages/NotFound'
@@ -44,6 +46,11 @@ export default function AppRouter() {
         <Route path="/sales/orders" element={<OrdersPage />} />
         <Route path="/orders/new" element={<OrderForm />} />
         <Route path="/orders/:id" element={<OrderDetail />} />
+        <Route path="/orders/:id/fill" element={
+          <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR', 'REFILL', 'SELLER']}>
+             <OrderFill />
+          </ProtectedRoute>
+        } />
         <Route path="/orders/:id/edit" element={<OrderForm />} />
         
         {/* Refill - Lista de pedidos grandes */}
@@ -60,15 +67,8 @@ export default function AppRouter() {
           </ProtectedRoute>
         } />
         
-        {/* Refill Form - Agregar productos (solo ADMIN y SUPERVISOR) */}
-        <Route path="/refill/:id/add-products" element={
-          <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}>
-            <RefillFormPage />
-          </ProtectedRoute>
-        } />
-        
-        {/* Refill Form - Editar producto (solo ADMIN y SUPERVISOR) */}
-        <Route path="/refill/:id/edit-product/:productId" element={
+        {/* Refill Form - Administrar productos (solo ADMIN y SUPERVISOR) */}
+        <Route path="/refill/:id/products" element={
           <ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}>
             <RefillFormPage />
           </ProtectedRoute>
@@ -77,6 +77,10 @@ export default function AppRouter() {
         <Route
           path="/reports"
           element={<ProtectedRoute allowedRoles={['ADMIN']}><Reports /></ProtectedRoute>}
+        />
+        <Route
+          path="/customers"
+          element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR', 'SELLER']}><Customers /></ProtectedRoute>}
         />
         <Route
           path="/users"

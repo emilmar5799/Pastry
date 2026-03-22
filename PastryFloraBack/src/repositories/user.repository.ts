@@ -13,36 +13,21 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
 
 export const findAllUsers = async (): Promise<any[]> => {
   const [rows] = await db.query<any[]>(
-    `SELECT u.*,
-      JSON_ARRAYAGG(p.phone) AS phones
-     FROM users u
-     LEFT JOIN user_phones p ON p.user_id = u.id
-     WHERE u.active = true
-     GROUP BY u.id`
+    `SELECT * FROM users WHERE active = true`
   )
   return rows
 }
 
 export const findInactiveUsers = async (): Promise<any[]> => {
   const [rows] = await db.query<any[]>(
-    `SELECT u.*,
-      JSON_ARRAYAGG(p.phone) AS phones
-     FROM users u
-     LEFT JOIN user_phones p ON p.user_id = u.id
-     WHERE u.active = false
-     GROUP BY u.id`
+    `SELECT * FROM users WHERE active = false`
   )
   return rows
 }
 
 export const findUserById = async (id: number): Promise<any | null> => {
   const [rows] = await db.query<any[]>(
-    `SELECT u.*,
-      JSON_ARRAYAGG(p.phone) AS phones
-     FROM users u
-     LEFT JOIN user_phones p ON p.user_id = u.id
-     WHERE u.id = ?
-     GROUP BY u.id`,
+    `SELECT * FROM users WHERE id = ?`,
     [id]
   )
   return rows.length ? rows[0] : null
@@ -81,18 +66,4 @@ export const reactivateUser = async (id: number) => {
   await db.query('UPDATE users SET active=true WHERE id=?', [id])
 }
 
-/* ===================== PHONES ===================== */
-
-export const insertPhones = async (userId: number, phones: string[]) => {
-  if (!phones.length) return
-
-  const values = phones.map(phone => [userId, phone])
-  await db.query(
-    'INSERT INTO user_phones (user_id, phone) VALUES ?',
-    [values]
-  )
-}
-
-export const deletePhonesByUser = async (userId: number) => {
-  await db.query('DELETE FROM user_phones WHERE user_id=?', [userId])
-}
+/* ===================== END ===================== */

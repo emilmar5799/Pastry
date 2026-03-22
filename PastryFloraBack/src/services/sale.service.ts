@@ -3,29 +3,38 @@ import * as saleProductRepo from '../repositories/sale-product.repository';
 
 export const createSale = async (
   branchId: number,
-  soldBy: number,
+  employeeId: number,
   products: {
     product_id: number;
     quantity: number;
-    price_at_sale: number;
-  }[]
+    unit_price: number;
+  }[],
+  customerId?: number,
+  paymentMethod?: string
 ) => {
   if (!products || products.length === 0) {
     throw new Error('Sale must have products');
   }
 
-  const total = products.reduce(
-    (sum, p) => sum + p.quantity * p.price_at_sale,
+  const productsWithSubtotal = products.map(p => ({
+    ...p,
+    subtotal: p.quantity * p.unit_price
+  }));
+
+  const total = productsWithSubtotal.reduce(
+    (sum, p) => sum + p.subtotal,
     0
   );
 
   const saleId = await saleRepo.createSale(
     branchId,
-    soldBy,
-    total
+    employeeId,
+    total,
+    customerId,
+    paymentMethod
   );
 
-  await saleProductRepo.insertSaleProducts(saleId, products);
+  await saleProductRepo.insertSaleProducts(saleId, productsWithSubtotal);
 
   return { id: saleId, total };
 };
@@ -47,19 +56,19 @@ export const updateSale = async (
   products: {
     product_id: number;
     quantity: number;
-    price_at_sale: number;
+    unit_price: number;
   }[]
 ) => {
   const total = products.reduce(
-    (sum, p) => sum + p.quantity * p.price_at_sale,
+    (sum, p) => sum + p.quantity * p.unit_price,
     0
   );
 
   await saleRepo.updateSale(id, total);
 };
 
-export const cancelSale = (id: number) =>
-  saleRepo.cancelSale(id);
+export const deleteSale = (id: number) =>
+  saleRepo.deleteSale(id);
 
 export const deleteSaleProduct = (id: number) =>
   saleProductRepo.deleteSaleProduct(id);

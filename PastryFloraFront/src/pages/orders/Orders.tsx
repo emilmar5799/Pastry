@@ -142,13 +142,13 @@ export default function OrdersPage() {
       }
 
       // Filtro por tipo de evento (solo para órdenes grandes)
-      if (eventType && order.type === 'LARGE' && order.event) {
-        if (order.event !== eventType) return false;
+      if (eventType && order.type === 'LARGE' && order.event_type) {
+        if (order.event_type !== eventType) return false;
       }
 
       // Filtro por fecha
       if (dateFilterType !== 'none') {
-        const orderDate = normalizeDate(order.delivery_datetime);
+        const orderDate = normalizeDate(order.delivery_date);
         
         if (dateFilterType === 'single' && singleDate) {
           const selectedDate = parseInputDate(singleDate);
@@ -187,16 +187,16 @@ export default function OrdersPage() {
     const today = normalizeDate(now);
     
     return [...filteredOrders].sort((a, b) => {
-      const dateA = new Date(a.delivery_datetime);
-      const dateB = new Date(b.delivery_datetime);
+      const dateA = new Date(a.delivery_date);
+      const dateB = new Date(b.delivery_date);
       
       // Primero: Orden por estado (FAILED al final)
       if (a.status === 'FAILED' && b.status !== 'FAILED') return 1;
       if (b.status === 'FAILED' && a.status !== 'FAILED') return -1;
       
       // Segundo: Orden por fecha
-      const dateOnlyA = normalizeDate(a.delivery_datetime);
-      const dateOnlyB = normalizeDate(b.delivery_datetime);
+      const dateOnlyA = normalizeDate(a.delivery_date);
+      const dateOnlyB = normalizeDate(b.delivery_date);
       
       const diffA = dateOnlyA.getTime() - today.getTime();
       const diffB = dateOnlyB.getTime() - today.getTime();
@@ -788,15 +788,15 @@ export default function OrdersPage() {
                               <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
                               <div>
                                 <p className="text-sm font-medium">
-                                  {formatDisplayDate(order.delivery_datetime)}
+                                  {formatDisplayDate(order.delivery_date)}
                                 </p>
                                 <p className={`text-xs ${
-                                  getTimeRelative(order.delivery_datetime) === 'Hoy' ? 'text-green-600 font-semibold' :
-                                  getTimeRelative(order.delivery_datetime) === 'Mañana' ? 'text-blue-600' :
-                                  getTimeRelative(order.delivery_datetime).startsWith('En') ? 'text-gray-500' :
+                                  getTimeRelative(order.delivery_date) === 'Hoy' ? 'text-green-600 font-semibold' :
+                                  getTimeRelative(order.delivery_date) === 'Mañana' ? 'text-blue-600' :
+                                  getTimeRelative(order.delivery_date).startsWith('En') ? 'text-gray-500' :
                                   'text-amber-600'
                                 }`}>
-                                  {getTimeRelative(order.delivery_datetime)}
+                                  {getTimeRelative(order.delivery_date)}
                                 </p>
                               </div>
                             </div>

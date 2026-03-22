@@ -19,7 +19,8 @@ import {
   DocumentTextIcon,
   ClipboardDocumentListIcon,
   CakeIcon,
-  ClockIcon
+  ClockIcon,
+  ShoppingCartIcon
 } from '@heroicons/react/24/outline';
 
 export default function OrderDetail() {
@@ -255,7 +256,7 @@ export default function OrderDetail() {
     );
   }
 
-  const deliveryDate = order.delivery_datetime;
+  const deliveryDate = order.delivery_date;
   const createdDate = order.created_at;
   const statusInfo = getStatusInfo(order.status);
   const typeInfo = getTypeInfo(order.type);
@@ -398,18 +399,48 @@ export default function OrderDetail() {
                     </div>
                   )}
 
-                  {order.event && order.type === 'LARGE' && (
+                  {order.event_type && order.type === 'LARGE' && (
                     <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="flex items-center gap-2">
                         <CakeIcon className="w-5 h-5 text-purple-500" />
                         <span className="font-semibold text-purple-800">Evento:</span>
                       </div>
-                      <p className="font-bold text-purple-700 mt-1">{order.event}</p>
+                      <p className="font-bold text-purple-700 mt-1">{order.event_type}</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
+
+            {/* Productos del Pedido */}
+            {order.products && order.products.length > 0 && (
+              <div className="mt-8 border-t border-gray-100 pt-6">
+                <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <ShoppingCartIcon className="w-5 h-5 text-purple-500" />
+                  Productos Seleccionados
+                </h3>
+                <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200 mb-6">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-gray-100 border-b border-gray-200 text-gray-600">
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Producto</th>
+                        <th className="px-4 py-3 font-medium text-center">Cant.</th>
+                        <th className="px-4 py-3 font-medium text-right">Precio Ref.</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {order.products.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-gray-100/50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-gray-800">{item.name || 'Desconocido'}</td>
+                          <td className="px-4 py-3 text-center text-gray-600 font-bold">{item.quantity}</td>
+                          <td className="px-4 py-3 text-right text-gray-600">Bs {formatPrice(item.price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* Especificaciones */}
             {order.specifications && (
@@ -522,6 +553,17 @@ export default function OrderDetail() {
                 >
                   <XCircleIcon className="w-5 h-5" />
                   Marcar como Fallido
+                </button>
+              )}
+
+              {/* Accion para Rellenar / Ajustar piezas del pedido */}
+              {order.type === 'LARGE' && order.status !== 'FINISHED' && order.status !== 'FAILED' && (
+                <button
+                  onClick={() => navigate(`/orders/${order.id}/fill`)}
+                  className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 border border-purple-300 text-purple-700 bg-purple-50 font-bold rounded-xl hover:bg-purple-100 transition-colors"
+                >
+                  <ShoppingCartIcon className="w-5 h-5" />
+                  Rellenar Productos (Armar Pedido)
                 </button>
               )}
 

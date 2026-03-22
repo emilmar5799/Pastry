@@ -25,21 +25,26 @@ export interface AddProductsToOrderData {
 export const OrderProductService = {
   // Obtener productos de una orden (REFILL, ADMIN, SUPERVISOR)
   getByOrderId(orderId: number): Promise<OrderProductWithDetails[]> {
-    return api.get(`/orders/${orderId}/products`).then(r => r.data);
+    return api.get(`/orders/${orderId}/products`).then((r: any) => r.data);
   },
 
   // Agregar productos a una orden (solo ADMIN y SUPERVISOR)
   addProducts(orderId: number, data: AddProductsToOrderData) {
-    return api.post(`/orders/${orderId}/products`, data).then(r => r.data);
+    return api.post(`/orders/${orderId}/products`, data).then((r: any) => r.data);
+  },
+
+  // Reemplazar todos los productos de una orden (solo ADMIN y SUPERVISOR)
+  setProducts(orderId: number, data: AddProductsToOrderData) {
+    return api.put(`/orders/${orderId}/products`, data).then((r: any) => r.data);
   },
 
   // Actualizar cantidad de un producto (solo ADMIN y SUPERVISOR)
   updateQuantity(id: number, quantity: number) {
-    return api.put(`/orders/products/${id}`, { quantity }).then(r => r.data);
+    return api.put(`/orders/products/${id}`, { quantity }).then((r: any) => r.data);
   },
 
   // Eliminar un producto de una orden (solo ADMIN y SUPERVISOR)
   deleteProduct(id: number) {
-    return api.delete(`/orders/products/${id}`).then(r => r.data);
+    return api.delete(`/orders/products/${id}`).then((r: any) => r.data);
   }
 };

@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import SaleService from '../../services/sale.service'
-import type { Sale } from '../../types/Sale'
+import type { Sale, SaleProduct } from '../../types/Sale'
 import { 
   ArrowLeftIcon,
   ReceiptPercentIcon,
   CalendarDaysIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   UserIcon,
   ShoppingBagIcon,
   CurrencyDollarIcon,
   DocumentTextIcon,
-  PrinterIcon
+  PrinterIcon,
+  BanknotesIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline'
 import {
   utcToBoliviaTime,
@@ -20,21 +20,8 @@ import {
   formatFullDateTime
 } from '../../utils/dateUtils'
 
-interface SaleProduct {
-  id: number
-  name: string
-  quantity: number
-  price_at_sale: number
-  product_id: number
-}
-
 interface SaleDetail extends Sale {
   products: SaleProduct[]
-  user?: {
-    id: number
-    name: string
-    email: string
-  }
 }
 
 export default function SaleDetail() {
@@ -77,10 +64,23 @@ export default function SaleDetail() {
     return `${integerPart}.${decimalPart}`
   }
 
+  const handleDelete = async () => {
+    if (window.confirm('¿Estás seguro de eliminar PERMANENTEMENTE esta venta?')) {
+      try {
+        await SaleService.cancel(Number(id)) // Calls the DELETE api method behind scenes
+        alert('Venta eliminada correctamente')
+        navigate('/sales')
+      } catch (error) {
+        console.error(error)
+        alert('Error al eliminar la venta')
+      }
+    }
+  }
+
   const calculateSubtotal = () => {
     if (!sale?.products) return 0
     return sale.products.reduce((total, product) => 
-      total + (product.price_at_sale * product.quantity), 0
+      total + product.subtotal, 0
     )
   }
 
@@ -113,7 +113,7 @@ export default function SaleDetail() {
     )
   }
 
-  const saleDate = utcToBoliviaTime(sale.created_at)
+  const saleDate = utcToBoliviaTime(sale.sale_date)
   const subtotal = calculateSubtotal()
   const productCount = sale.products?.length || 0
   const totalUnits = sale.products?.reduce((sum, p) => sum + p.quantity, 0) || 0
@@ -131,7 +131,7 @@ export default function SaleDetail() {
               <h1 className="text-3xl font-bold text-gray-800">
                 Venta #{sale.id}
               </h1>
-              <p className="text-gray-600 mt-1">Detalles y productos de la venta</p>
+              <p className="text-gray-600 mt-1">Detalles y recibo de venta</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function SaleDetail() {
             </button>
             <button
               onClick={() => navigate('/sales')}
-              className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 border border-purple-300 text-purple-700 font-medium rounded-xl hover:bg-purple-50 transition-colors"
             >
               <ArrowLeftIcon className="w-5 h-5" />
               Volver
@@ -158,33 +158,14 @@ export default function SaleDetail() {
         {/* Información de la venta */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Información de la Venta</h2>
+            <h2 className="text-xl font-bold text-gray-800 mb-6">Información General</h2>
             
             <div className="space-y-4">
-              {/* Estado */}
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  {sale.status === 'ACTIVE' ? (
-                    <CheckCircleIcon className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <XCircleIcon className="w-5 h-5 text-red-500" />
-                  )}
-                  <span className="font-medium">Estado</span>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  sale.status === 'ACTIVE'
-                    ? 'bg-green-100 text-green-800 border border-green-200'
-                    : 'bg-red-100 text-red-800 border border-red-200'
-                }`}>
-                  {sale.status === 'ACTIVE' ? 'Activa' : 'Cancelada'}
-                </span>
-              </div>
-
               {/* Fecha y hora */}
               <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <CalendarDaysIcon className="w-5 h-5 text-gray-500" />
-                  <span className="font-medium">Fecha</span>
+                  <span className="font-medium">Fecha de Venta</span>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{formatDateTimeForDisplay(saleDate)}</p>
@@ -192,31 +173,50 @@ export default function SaleDetail() {
                 </div>
               </div>
 
+              {/* Payment Method */}
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                 <div className="flex items-center gap-2">
+                    <BanknotesIcon className="w-5 h-5 text-blue-500" />
+                    <span className="font-medium text-blue-800">Método de Pago</span>
+                 </div>
+                 <span className="px-3 py-1 rounded-md text-sm font-bold bg-white text-blue-800 border-2 border-blue-200">
+                    {sale.payment_method || 'Efectivo'}
+                 </span>
+              </div>
+
               {/* Información adicional */}
-              <div className="space-y-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="space-y-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <ShoppingBagIcon className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm text-blue-700">Productos</span>
+                    <ShoppingBagIcon className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">Productos distintos</span>
                   </div>
-                  <span className="font-semibold text-blue-800">{productCount}</span>
+                  <span className="font-semibold text-gray-800">{productCount}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm text-blue-700">Unidades</span>
+                    <DocumentTextIcon className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-700">Unidades totales</span>
                   </div>
-                  <span className="font-semibold text-blue-800">{totalUnits}</span>
+                  <span className="font-semibold text-gray-800">{totalUnits}</span>
                 </div>
-                {sale.user && (
-                  <div className="flex justify-between items-center">
+              </div>
+              
+              <div className="space-y-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                 <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                      <UserIcon className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm text-blue-700">Vendedor</span>
+                       <UserIcon className="w-4 h-4 text-indigo-500" />
+                       <span className="text-sm text-indigo-700">Cliente</span>
                     </div>
-                    <span className="font-semibold text-blue-800">{sale.user.name}</span>
-                  </div>
-                )}
+                    <span className="font-semibold text-indigo-800">{sale.customer_name || 'Al Paso'}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                       <UserIcon className="w-4 h-4 text-indigo-500 opacity-60" />
+                       <span className="text-sm text-indigo-700">Vendedor</span>
+                    </div>
+                    <span className="font-semibold text-indigo-800">{sale.employee_name || 'Desconocido'}</span>
+                 </div>
               </div>
 
               {/* Total */}
@@ -224,7 +224,7 @@ export default function SaleDetail() {
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
                     <CurrencyDollarIcon className="w-5 h-5 text-purple-600" />
-                    <span className="font-bold text-gray-800">Total Venta</span>
+                    <span className="font-bold text-gray-800">Total Pagado</span>
                   </div>
                   <span className="font-bold text-2xl text-purple-600">
                     Bs {formatPrice(sale.total)}
@@ -239,36 +239,15 @@ export default function SaleDetail() {
 
           {/* Acciones */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="font-bold text-gray-700 mb-4">Acciones</h3>
+            <h3 className="font-bold text-gray-700 mb-4">Acciones Peligrosas</h3>
             <div className="space-y-3">
-              <button
-                onClick={handlePrint}
-                disabled={printing}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                <PrinterIcon className="w-5 h-5" />
-                {printing ? 'Preparando...' : 'Imprimir Recibo'}
-              </button>
-              {sale.status === 'ACTIVE' && (
                 <button
-                  onClick={async () => {
-                    if (window.confirm('¿Estás seguro de cancelar esta venta?')) {
-                      try {
-                        await SaleService.cancel(sale.id)
-                        alert('Venta cancelada correctamente')
-                        navigate('/sales')
-                      } catch (error) {
-                        console.error(error); 
-                        alert('Error al cancelar la venta');
-                      }
-                    }
-                  }}
+                  onClick={handleDelete}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-red-300 text-red-600 font-medium rounded-xl hover:bg-red-50 transition-colors"
                 >
-                  <XCircleIcon className="w-5 h-5" />
-                  Cancelar Venta
+                  <TrashIcon className="w-5 h-5" />
+                  Eliminar permanentemente
                 </button>
-              )}
             </div>
           </div>
         </div>
@@ -280,7 +259,7 @@ export default function SaleDetail() {
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">Productos Vendidos</h2>
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
-                  {productCount} producto{productCount !== 1 ? 's' : ''}
+                  {productCount} item{productCount !== 1 ? 's' : ''}
                 </span>
               </div>
             </div>
@@ -293,10 +272,10 @@ export default function SaleDetail() {
                       Producto
                     </th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Precio Unitario
+                      Precio Unit
                     </th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cantidad
+                      Ctd
                     </th>
                     <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Subtotal
@@ -315,8 +294,6 @@ export default function SaleDetail() {
                     </tr>
                   ) : (
                     sale.products?.map((product, index) => {
-                      const productSubtotal = product.price_at_sale * product.quantity
-                      
                       return (
                         <tr key={product.id} className="hover:bg-gray-50 transition-colors group">
                           <td className="py-4 px-6">
@@ -338,7 +315,7 @@ export default function SaleDetail() {
                             <div className="flex items-center gap-2">
                               <CurrencyDollarIcon className="w-4 h-4 text-gray-400" />
                               <span className="font-semibold text-gray-800">
-                                Bs {formatPrice(product.price_at_sale)}
+                                Bs {formatPrice(product.unit_price)}
                               </span>
                             </div>
                           </td>
@@ -347,14 +324,13 @@ export default function SaleDetail() {
                               <span className="font-mono text-lg font-bold text-gray-800">
                                 {product.quantity}
                               </span>
-                              <span className="text-sm text-gray-500">unidades</span>
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2">
                               <ReceiptPercentIcon className="w-4 h-4 text-green-500" />
                               <span className="font-bold text-lg text-green-600">
-                                Bs {formatPrice(productSubtotal)}
+                                Bs {formatPrice(product.subtotal)}
                               </span>
                             </div>
                           </td>
@@ -372,13 +348,12 @@ export default function SaleDetail() {
                 <div className="w-full md:w-2/3 lg:w-1/2">
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm text-gray-600">
-                      <span>Subtotal:</span>
+                      <span>Subtotal Calculado:</span>
                       <span className="font-medium">Bs {formatPrice(subtotal)}</span>
                     </div>
-                    {/* Si hay descuentos o impuestos se pueden agregar aquí */}
                     <div className="border-t border-gray-200 pt-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-gray-800 text-lg">Total:</span>
+                        <span className="font-bold text-gray-800 text-lg">Monto Cobrado:</span>
                         <span className="font-bold text-2xl text-purple-600">
                           Bs {formatPrice(sale.total)}
                         </span>
@@ -397,8 +372,7 @@ export default function SaleDetail() {
               <div>
                 <p className="font-medium text-amber-800 mb-1">Para imprimir el recibo</p>
                 <p className="text-sm text-amber-700">
-                  Use el botón "Imprimir Recibo" en la sección de información. 
-                  La vista previa de impresión mostrará un formato limpio para entregar al cliente.
+                  Use el botón "Imprimir" en la sección superior para generar una vista optimizada del recibo.
                 </p>
               </div>
             </div>
@@ -424,21 +398,6 @@ export default function SaleDetail() {
           
           button, .print-button {
             display: none !important;
-          }
-          
-          .receipt-header {
-            text-align: center;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid #000;
-            padding-bottom: 1rem;
-          }
-          
-          .receipt-footer {
-            margin-top: 2rem;
-            border-top: 2px dashed #000;
-            padding-top: 1rem;
-            text-align: center;
-            font-size: 0.875rem;
           }
         }
       `}</style>

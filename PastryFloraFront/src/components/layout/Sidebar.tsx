@@ -8,6 +8,7 @@ import {
   CubeIcon,
   InboxIcon,
   UserCircleIcon,
+  UserGroupIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../hooks/useAuth'
@@ -22,6 +23,7 @@ const iconMap: Record<string, React.FC<{className?: string}>> = {
   '/': HomeIcon,
   '/sales': ShoppingCartIcon,
   '/orders': DocumentTextIcon,
+  '/customers': UserGroupIcon,
   '/reports': ChartBarIcon,
   '/products': CubeIcon,
   '/refill': InboxIcon,
@@ -31,6 +33,7 @@ const iconMap: Record<string, React.FC<{className?: string}>> = {
 const menu = [
   { label: 'Inicio', path: '/', roles: ['ADMIN', 'SUPERVISOR', 'REFILL', 'SELLER'] },
   { label: 'Ventas', path: '/sales', roles: ['ADMIN', 'SUPERVISOR', 'REFILL', 'SELLER'] },
+  { label: 'Clientes', path: '/customers', roles: ['ADMIN', 'SUPERVISOR', 'SELLER'] },
   { label: 'Reservas', path: '/orders', roles: ['ADMIN', 'SUPERVISOR', 'REFILL', 'SELLER'] },
   { label: 'Reportes', path: '/reports', roles: ['ADMIN'] },
   { label: 'Productos', path: '/products', roles: ['ADMIN', 'SUPERVISOR'] },

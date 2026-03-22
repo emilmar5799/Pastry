@@ -2,7 +2,9 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SaleService from '../../services/sale.service'
 import ProductService from '../../services/product.service'
+import { CustomerService } from '../../services/customer.service'
 import type { Product } from '../../types/Product'
+import type { Customer } from '../../types/customer'
 import { 
   ShoppingCartIcon, 
   PlusCircleIcon, 
@@ -25,10 +27,13 @@ interface SaleItem {
 
 export default function SaleForm() {
   const [products, setProducts] = useState<Product[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [items, setItems] = useState<SaleItem[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [customerId, setCustomerId] = useState<number | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState<string>('Efectivo')
   const [searchTerm, setSearchTerm] = useState('')
   const [showProductList, setShowProductList] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
@@ -39,12 +44,14 @@ export default function SaleForm() {
       setLoading(true)
       try {
         const data = await ProductService.getAll()
-        // Filtrar solo productos activos
-        const activeProducts = data.filter(p => p.active)
+        const activeProducts = data.filter(p => p.status !== 'Inactivo')
         setProducts(activeProducts)
         setFilteredProducts(activeProducts)
+
+        const custData = await CustomerService.getAll()
+        setCustomers(custData)
       } catch (error) {
-        console.error('Error loading products:', error)
+        console.error('Error loading initial data:', error)
       } finally {
         setLoading(false)
       }
@@ -156,14 +163,18 @@ export default function SaleForm() {
 
     // Preparar datos para enviar
     const saleData = items.map(item => ({
-      product_id: item.product_id, // Ahora es siempre number, no number | null
+      product_id: item.product_id,
       quantity: item.quantity,
-      price_at_sale: item.price_at_sale
+      unit_price: item.price_at_sale
     }))
 
     setSubmitting(true)
     try {
-      await SaleService.create(saleData)
+      await SaleService.create(
+        saleData, 
+        customerId === '' ? undefined : customerId, 
+        paymentMethod
+      )
       alert('Venta registrada exitosamente')
       navigate('/sales')
     } catch (error: any) {
@@ -237,6 +248,42 @@ export default function SaleForm() {
               </div>
             ) : (
               <>
+                {/* Opciones Generales de Venta */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Cliente (Opcional)
+                    </label>
+                    <select
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                      value={customerId}
+                      onChange={(e) => setCustomerId(e.target.value === '' ? '' : Number(e.target.value))}
+                    >
+                      <option value="">-- Cliente Al Paso --</option>
+                      {customers.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Método de Pago
+                    </label>
+                    <select
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    >
+                      <option value="Efectivo">Efectivo 💵</option>
+                      <option value="Tarjeta">Tarjeta 💳</option>
+                      <option value="QR">Código QR 📱</option>
+                      <option value="Transferencia">Transferencia 🏦</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* Buscador de productos */}
                 <div className="mb-6" ref={searchRef}>
                   <div className="relative">

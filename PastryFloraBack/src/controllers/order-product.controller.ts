@@ -10,6 +10,14 @@ export const add = async (req: AuthRequest, res: Response) => {
   res.status(201).json({ message: 'Products added' });
 };
 
+export const set = async (req: AuthRequest, res: Response) => {
+  await service.setProducts(
+    Number(req.params.orderId),
+    req.body.products
+  );
+  res.json({ message: 'Products replaced' });
+};
+
 export const list = async (req: AuthRequest, res: Response) => {
   res.json(await service.listProducts(Number(req.params.orderId)));
 };

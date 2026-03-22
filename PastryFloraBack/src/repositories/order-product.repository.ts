@@ -44,3 +44,10 @@ export const deleteOrderProduct = async (id: number) => {
     [id]
   );
 };
+
+export const deleteByOrderId = async (orderId: number) => {
+  await db.query(
+    `DELETE FROM order_products WHERE order_id = ?`,
+    [orderId]
+  );
+};

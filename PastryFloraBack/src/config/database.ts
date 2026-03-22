@@ -8,5 +8,6 @@ export const db = mysql.createPool({
   password: env.db.password,
   database: env.db.name,
   waitForConnections: true,
-  connectionLimit: 10
+  connectionLimit: 10,
+  timezone: '+00:00' // Ensure mysql2 driver treats DB timestamps as UTC
 });

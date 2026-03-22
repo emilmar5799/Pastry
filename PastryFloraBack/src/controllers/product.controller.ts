@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import * as productService from '../services/product.service';
 
 export const create = async (req: Request, res: Response) => {
-  const { name, price } = req.body;
-  await productService.createProduct(name, Number(price));
+  const { name, price, description, category, status } = req.body;
+  await productService.createProduct(name, Number(price), description, category, status);
   res.status(201).json({ message: 'Product created' });
 };
 
@@ -18,11 +18,14 @@ export const getById = async (req: Request, res: Response) => {
 };
 
 export const update = async (req: Request, res: Response) => {
-  const { name, price } = req.body;
+  const { name, price, description, category, status } = req.body;
   await productService.updateProduct(
     Number(req.params.id),
     name,
-    Number(price)
+    Number(price),
+    description,
+    category,
+    status
   );
   res.json({ message: 'Product updated' });
 };

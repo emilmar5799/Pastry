@@ -11,6 +11,16 @@ export const addProducts = async (
   await repo.insertOrderProducts(orderId, products);
 };
 
+export const setProducts = async (
+  orderId: number,
+  products: { product_id: number; quantity: number }[]
+) => {
+  await repo.deleteByOrderId(orderId);
+  if (products && products.length > 0) {
+    await repo.insertOrderProducts(orderId, products);
+  }
+};
+
 export const listProducts = async (orderId: number) => {
   return repo.findByOrderId(orderId);
 };

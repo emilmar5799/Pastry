@@ -10,10 +10,6 @@ export const createUser = async (data: any) => {
     password: hashedPassword
   })
 
-  if (data.phones?.length) {
-    await repo.insertPhones(userId, data.phones)
-  }
-
   return { id: userId }
 }
 
@@ -34,10 +30,6 @@ export const getUserById = async (id: number) => {
 export const updateUser = async (id: number, data: any) => {
   await repo.updateUser(id, data)
 
-  if (data.phones) {
-    await repo.deletePhonesByUser(id)
-    await repo.insertPhones(id, data.phones)
-  }
 }
 
 export const deleteUser = async (id: number) => {

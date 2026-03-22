@@ -104,6 +104,7 @@ CREATE TABLE `orders` (
   `event_type` varchar(100) DEFAULT NULL,
   `warranty` varchar(100) DEFAULT NULL,
   `type` varchar(50) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'DEFAULT',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`branch_id`) REFERENCES `branches` (`id`),

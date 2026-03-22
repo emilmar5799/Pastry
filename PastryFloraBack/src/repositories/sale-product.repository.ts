@@ -5,19 +5,21 @@ export const insertSaleProducts = async (
   products: {
     product_id: number;
     quantity: number;
-    price_at_sale: number;
+    unit_price: number;
+    subtotal: number;
   }[]
 ) => {
   const values = products.map(p => [
     saleId,
     p.product_id,
     p.quantity,
-    p.price_at_sale
+    p.unit_price,
+    p.subtotal
   ]);
 
   await db.query(
     `INSERT INTO sale_products
-     (sale_id, product_id, quantity, price_at_sale)
+     (sale_id, product_id, quantity, unit_price, subtotal)
      VALUES ?`,
     [values]
   );

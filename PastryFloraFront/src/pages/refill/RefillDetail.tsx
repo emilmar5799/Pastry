@@ -197,11 +197,11 @@ export default function RefillDetailPage() {
           <div className="flex items-center gap-3">
             {canEdit && (
               <Link
-                to={`/refill/${order.id}/add-products`}
+                to={`/refill/${order.id}/products`}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:shadow-lg transition-all"
               >
                 <PlusCircleIcon className="w-5 h-5" />
-                Agregar Productos
+                Administrar Productos
               </Link>
             )}
             <Link
@@ -324,11 +324,6 @@ export default function RefillDetailPage() {
                       <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Subtotal
                       </th>
-                      {canEdit && (
-                        <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Acciones
-                        </th>
-                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -390,7 +385,7 @@ export default function RefillDetailPage() {
                     
                     {/* Total */}
                     <tr className="bg-gray-50 font-semibold">
-                      <td className="py-4 px-6 text-right" colSpan={canEdit ? 3 : 2}>
+                      <td className="py-4 px-6 text-right" colSpan={3}>
                         <span className="text-gray-700">TOTAL:</span>
                       </td>
                       <td className="py-4 px-6">
@@ -401,7 +396,6 @@ export default function RefillDetailPage() {
                           </span>
                         </div>
                       </td>
-                      {canEdit && <td className="py-4 px-6"></td>}
                     </tr>
                   </tbody>
                 </table>

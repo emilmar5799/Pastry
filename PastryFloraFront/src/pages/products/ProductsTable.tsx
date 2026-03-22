@@ -45,6 +45,9 @@ export default function ProductsTable({
                 Producto
               </th>
               <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Categoría
+              </th>
+              <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Precio
               </th>
               <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -79,10 +82,15 @@ export default function ProductsTable({
                         <p className="font-semibold text-gray-900">{product.name}</p>
                         <p className="text-xs text-gray-500 mt-1">
                           ID: {product.id} • 
-                          Actualizado: {new Date( product.created_at).toLocaleDateString('es-ES')}
+                          Actualizado: {new Date(product.created_at).toLocaleDateString('es-ES')}
                         </p>
                       </div>
                     </div>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="text-gray-700">
+                      {product.category || '-'}
+                    </span>
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-2">
@@ -93,15 +101,19 @@ export default function ProductsTable({
                     </div>
                   </td>
                   <td className="py-4 px-6">
-                    {product.active ? (
+                    {product.status === 'Disponible' ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
                         <CheckCircleIcon className="w-3.5 h-3.5" />
-                        Activo
+                        {product.status}
                       </span>
-                    ) : (
+                    ) : product.status === 'Inactivo' ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
                         <XCircleIcon className="w-3.5 h-3.5" />
-                        Inactivo
+                        {product.status}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                        {product.status}
                       </span>
                     )}
                   </td>

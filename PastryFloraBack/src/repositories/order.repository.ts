@@ -3,25 +3,23 @@ import { db } from '../config/database';
 export const createOrder = async (data: any): Promise<number> => {
   const [result]: any = await db.query(
     `INSERT INTO orders (
-      branch_id, created_by, delivery_datetime, customer_name,
-      customer_ci, phone, color, price, pieces,
-      specifications, advance, event, warranty, type
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      branch_id, employee_id, customer_id, delivery_date, color, price, pieces,
+      specifications, advance, event_type, warranty, type, status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.branch_id,
-      data.created_by,
-      data.delivery_datetime,
-      data.customer_name,
-      data.customer_ci,
-      data.phone,
+      data.employee_id,
+      data.customer_id,
+      data.delivery_date,
       data.color,
       data.price,
       data.pieces,
       data.specifications,
       data.advance,
-      data.event,
+      data.event_type,
       data.warranty,
-      data.type
+      data.type,
+      data.status || 'DEFAULT'
     ]
   );
 
@@ -30,9 +28,11 @@ export const createOrder = async (data: any): Promise<number> => {
 
 export const findAllByBranch = async (branchId: number) => {
   const [rows] = await db.query(
-    `SELECT * FROM orders
-     WHERE branch_id = ?
-     ORDER BY created_at DESC`,
+    `SELECT o.*, c.name as customer_name, c.ci as customer_ci, c.phone as phone
+     FROM orders o
+     JOIN customers c ON c.id = o.customer_id
+     WHERE o.branch_id = ?
+     ORDER BY o.created_at DESC`,
     [branchId]
   );
   return rows;
@@ -40,7 +40,10 @@ export const findAllByBranch = async (branchId: number) => {
 
 export const findById = async (id: number) => {
   const [rows]: any = await db.query(
-    `SELECT * FROM orders WHERE id = ?`,
+    `SELECT o.*, c.name as customer_name, c.ci as customer_ci, c.phone as phone
+     FROM orders o
+     JOIN customers c ON c.id = o.customer_id
+     WHERE o.id = ?`,
     [id]
   );
   return rows[0];

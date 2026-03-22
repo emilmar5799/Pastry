@@ -8,20 +8,19 @@ import {
   ShoppingCartIcon,
   PlusCircleIcon,
   EyeIcon,
-  XCircleIcon,
+  TrashIcon,
   ArrowPathIcon,
   ReceiptPercentIcon,
   CalendarDaysIcon,
-  ClockIcon
+  UserIcon,
+  BanknotesIcon
 } from '@heroicons/react/24/outline'
 
 export default function Sales() {
   const [sales, setSales] = useState<Sale[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'active' | 'cancelled'>('all')
   const navigate = useNavigate()
 
-  // Usamos el hook de modal
   const {
     modalConfig,
     isModalOpen,
@@ -54,19 +53,19 @@ export default function Sales() {
     loadSales()
   }, [])
 
-  const handleCancelSale = (sale: Sale) => {
+  const handleDeleteSale = (sale: Sale) => {
     showModal({
-      title: 'Cancelar Venta',
-      message: `¿Estás seguro de cancelar la venta #${sale.id} por Bs ${sale.total}?`,
-      type: 'warning',
-      confirmText: 'Sí, cancelar',
+      title: 'Eliminar Venta',
+      message: `¿Estás seguro de eliminar PERMANENTEMENTE la venta #${sale.id} por Bs ${sale.total}?`,
+      type: 'danger',
+      confirmText: 'Sí, eliminar',
       showCancel: true,
       onConfirm: async () => {
         try {
-          await SaleService.cancel(sale.id)
+          await SaleService.cancel(sale.id) // Map delete to cancel service method (which calls DELETE)
           showModal({
-            title: 'Venta Cancelada',
-            message: `La venta #${sale.id} ha sido cancelada correctamente.`,
+            title: 'Venta Eliminada',
+            message: `La venta #${sale.id} ha sido eliminada correctamente.`,
             type: 'success',
             confirmText: 'Aceptar',
             showCancel: false,
@@ -75,34 +74,22 @@ export default function Sales() {
         } catch (err: any) {
           showModal({
             title: 'Error',
-            message: `Error al cancelar venta: ${err.message}`,
+            message: `Error al eliminar venta: ${err.message}`,
             type: 'danger',
             confirmText: 'Reintentar',
             showCancel: true,
-            onConfirm: () => handleCancelSale(sale)
+            onConfirm: () => handleDeleteSale(sale)
           })
         }
       }
     })
   }
 
-  // Filtrar ventas según el filtro seleccionado
-  const filteredSales = sales.filter(sale => {
-    if (filter === 'active') return sale.status === 'ACTIVE'
-    if (filter === 'cancelled') return sale.status === 'CANCELLED'
-    return true
-  })
+  const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total), 0)
 
-  // Calcular estadísticas
-  const activeSales = sales.filter(s => s.status === 'ACTIVE')
-  const cancelledSales = sales.filter(s => s.status === 'CANCELLED')
-  const totalRevenue = activeSales.reduce((sum, sale) => sum + Number(sale.total), 0)
-
-  // Función para formatear fecha localmente
   const formatLocalDateTime = (dateString: string): string => {
     try {
       const date = new Date(dateString)
-      // Formato: DD/MM/YYYY HH:MM
       const day = date.getDate().toString().padStart(2, '0')
       const month = (date.getMonth() + 1).toString().padStart(2, '0')
       const year = date.getFullYear()
@@ -110,12 +97,10 @@ export default function Sales() {
       const minutes = date.getMinutes().toString().padStart(2, '0')
       return `${day}/${month}/${year} ${hours}:${minutes}`
     } catch (error) {
-      console.log(error)
       return dateString
     }
   }
 
-  // Función para calcular tiempo relativo
   const getTimeAgo = (dateString: string): string => {
     try {
       const date = new Date(dateString)
@@ -129,7 +114,6 @@ export default function Sales() {
       
       return `hace ${Math.floor(diffInSeconds / 2592000)} meses`
     } catch (error) {
-      console.log(error)
       return 'fecha desconocida'
     }
   }
@@ -147,7 +131,6 @@ export default function Sales() {
 
   return (
     <div className="space-y-6">
-      {/* Modal dinámico */}
       <Modal
         isOpen={isModalOpen}
         onClose={hideModal}
@@ -159,7 +142,6 @@ export default function Sales() {
           <p className="text-gray-700 leading-relaxed">
             {modalConfig?.message}
           </p>
-          
           <ModalButtons
             onConfirm={modalConfig?.onConfirm ? handleConfirm : undefined}
             onCancel={modalConfig?.showCancel ? hideModal : undefined}
@@ -171,7 +153,6 @@ export default function Sales() {
         </div>
       </Modal>
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/5 rounded-2xl p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -204,35 +185,24 @@ export default function Sales() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Stats y Filtros */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="font-bold text-gray-700 mb-4">Resumen de Ventas</h3>
+            <h3 className="font-bold text-gray-700 mb-4">Resumen General</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                 <div>
-                  <p className="text-sm text-gray-600">Ventas activas</p>
-                  <p className="text-2xl font-bold text-gray-800">{activeSales.length}</p>
+                  <p className="text-sm text-gray-600">Total ventas</p>
+                  <p className="text-2xl font-bold text-gray-800">{sales.length}</p>
                 </div>
                 <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                   <ShoppingCartIcon className="w-5 h-5 text-green-600" />
                 </div>
               </div>
               
-              <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                <div>
-                  <p className="text-sm text-gray-600">Ventas canceladas</p>
-                  <p className="text-2xl font-bold text-gray-800">{cancelledSales.length}</p>
-                </div>
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <XCircleIcon className="w-5 h-5 text-red-600" />
-                </div>
-              </div>
-              
               <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                 <div>
                   <p className="text-sm text-gray-600">Ingreso total</p>
-                  <p className="text-2xl font-bold text-gray-800">Bs {totalRevenue}</p>
+                  <p className="text-2xl font-bold text-gray-800">Bs {totalRevenue.toFixed(2)}</p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                   <ReceiptPercentIcon className="w-5 h-5 text-purple-600" />
@@ -240,149 +210,80 @@ export default function Sales() {
               </div>
             </div>
           </div>
-
-          {/* Filtros */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="font-bold text-gray-700 mb-4">Filtrar por estado</h3>
-            <div className="space-y-2">
-              {[
-                { id: 'all', label: 'Todas las ventas', count: sales.length, color: 'bg-gray-100 text-gray-800' },
-                { id: 'active', label: 'Ventas activas', count: activeSales.length, color: 'bg-green-100 text-green-800' },
-                { id: 'cancelled', label: 'Ventas canceladas', count: cancelledSales.length, color: 'bg-red-100 text-red-800' }
-              ].map((filterOption) => (
-                <button
-                  key={filterOption.id}
-                  onClick={() => setFilter(filterOption.id as any)}
-                  className={`w-full flex justify-between items-center p-3 rounded-lg transition-all ${
-                    filter === filterOption.id
-                      ? 'bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="font-medium">{filterOption.label}</span>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${filterOption.color}`}>
-                    {filterOption.count}
-                  </span>
-                </button>
-              ))}
-            </div>
+          <div className="bg-purple-50 rounded-xl p-5">
+            <h4 className="font-medium text-purple-800 mb-2">💡 Tips</h4>
+            <ul className="text-sm text-purple-700 space-y-2">
+              <li>• Puedes buscar detalles del cliente entrando en "Ver detalles".</li>
+              <li>• Las eliminaciones de venta no son reversibles. Ojo con los tickets vinculados.</li>
+            </ul>
           </div>
         </div>
 
-        {/* Tabla de ventas */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Historial de Ventas</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Historial</h2>
                   <p className="text-sm text-gray-600 mt-1">
-                    {filteredSales.length} venta{filteredSales.length !== 1 ? 's' : ''} encontrada{filteredSales.length !== 1 ? 's' : ''}
+                    {sales.length} venta{sales.length !== 1 ? 's' : ''} encontrada{sales.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-200">
-                  {filter === 'all' ? 'Todas' : filter === 'active' ? 'Activas' : 'Canceladas'}
-                </span>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              {filteredSales.length === 0 ? (
+              {sales.length === 0 ? (
                 <div className="py-12 px-6 text-center">
                   <ShoppingCartIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-400 text-lg font-medium mb-2">
-                    No hay ventas {filter !== 'all' ? filter === 'active' ? 'activas' : 'canceladas' : ''}
+                    Aún no hay ventas registradas
                   </p>
-                  {filter !== 'all' && (
-                    <button
-                      onClick={() => setFilter('all')}
-                      className="text-purple-600 hover:text-purple-700 font-medium"
-                    >
-                      Ver todas las ventas
-                    </button>
-                  )}
                 </div>
               ) : (
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Venta
-                      </th>
-                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha y Hora
-                      </th>
-                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
+                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metadatos</th>
+                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente/Empleado</th>
+                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total & Pago</th>
+                      <th className="py-3 px-6 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {filteredSales.map(sale => (
+                    {sales.map(sale => (
                       <tr key={sale.id} className="hover:bg-gray-50 transition-colors group">
                         <td className="py-4 px-6">
                           <div>
-                            <p className="font-bold text-gray-900">#{sale.id}</p>
+                            <p className="font-bold text-gray-900">Venta #{sale.id}</p>
                             <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                              <ClockIcon className="w-3 h-3" />
-                              <span>{getTimeAgo(sale.created_at)}</span>
+                              <CalendarDaysIcon className="w-3 h-3" />
+                              <span>{formatLocalDateTime(sale.sale_date)} ({getTimeAgo(sale.sale_date)})</span>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <ReceiptPercentIcon className="w-4 h-4 text-gray-400" />
-                            <span className="font-bold text-green-600 text-lg">
-                              Bs {sale.total}
-                            </span>
-                          </div>
+                           <div className="flex flex-col gap-1">
+                              <span className="flex items-center text-sm font-medium text-gray-900 gap-1"><UserIcon className="w-4 h-4 text-purple-500" /> {sale.customer_name || 'Al Paso'}</span>
+                              <span className="text-xs text-gray-500">Atendido por: {sale.employee_name || `Emp #${sale.employee_id}`}</span>
+                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="flex items-center gap-2 text-sm">
-                            <CalendarDaysIcon className="w-4 h-4 text-gray-400" />
-                            <div>
-                              <p>{formatLocalDateTime(sale.created_at)}</p>
-                              <p className="text-xs text-gray-500">Hora local</p>
-                            </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-bold text-green-600 text-lg flex items-center gap-1">Bs {sale.total}</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-800 w-max border border-blue-200">
+                                <BanknotesIcon className="w-3 h-3" /> {sale.payment_method || 'Efectivo'}
+                            </span>
                           </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          {sale.status === 'ACTIVE' ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-200">
-                              <PlusCircleIcon className="w-3.5 h-3.5" />
-                              Activa
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
-                              <XCircleIcon className="w-3.5 h-3.5" />
-                              Cancelada
-                            </span>
-                          )}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex gap-1.5">
-                            <button
-                              onClick={() => navigate(`/sales/${sale.id}`)}
-                              className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:shadow-sm active:scale-95"
-                              title="Ver detalles"
-                            >
+                            <button onClick={() => navigate(`/sales/${sale.id}`)} className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all hover:shadow-sm active:scale-95" title="Ver detalles">
                               <EyeIcon className="w-5 h-5" />
                             </button>
-                            {sale.status === 'ACTIVE' && (
-                              <button
-                                onClick={() => handleCancelSale(sale)}
-                                className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all hover:shadow-sm active:scale-95"
-                                title="Cancelar venta"
-                              >
-                                <XCircleIcon className="w-5 h-5" />
-                              </button>
-                            )}
+                            <button onClick={() => handleDeleteSale(sale)} className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all hover:shadow-sm active:scale-95" title="Eliminar venta">
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -390,26 +291,6 @@ export default function Sales() {
                   </tbody>
                 </table>
               )}
-            </div>
-
-            {/* Footer de la tabla */}
-            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-              <div className="flex justify-between items-center text-sm text-gray-600">
-                <div>
-                  Mostrando <span className="font-medium">{filteredSales.length}</span> de{' '}
-                  <span className="font-medium">{sales.length}</span> ventas
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Activa</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span>Cancelada</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

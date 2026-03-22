@@ -1,7 +1,9 @@
 export interface Product {
   id: number;
   name: string;
+  description?: string;
   price: number;
-  active: boolean;
+  category?: string;
+  status: string;
   created_at: Date;
 }

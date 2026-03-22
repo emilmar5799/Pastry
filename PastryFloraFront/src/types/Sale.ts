@@ -1,10 +1,13 @@
 export interface Sale {
   id: number
   branch_id: number
-  sold_by: number
+  employee_id: number
+  customer_id?: number | null
   total: number
-  status: 'ACTIVE' | 'CANCELLED'
-  created_at: string
+  payment_method?: string | null
+  customer_name?: string
+  employee_name?: string
+  sale_date: string
 }
 
 export interface SaleProduct {
@@ -13,5 +16,6 @@ export interface SaleProduct {
   product_id: number
   name: string
   quantity: number
-  price_at_sale: number
+  unit_price: number
+  subtotal: number
 }

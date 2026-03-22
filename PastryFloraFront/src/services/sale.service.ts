@@ -4,12 +4,12 @@ import type { Sale, SaleProduct } from '../types/Sale'
 interface CreateSaleProductDTO {
   product_id: number
   quantity: number
-  price_at_sale: number
+  unit_price: number
 }
 
 const SaleService = {
-  create: async (products: CreateSaleProductDTO[]) => {
-    const { data } = await api.post('/sales', { products })
+  create: async (products: CreateSaleProductDTO[], customerId?: number, paymentMethod?: string) => {
+    const { data } = await api.post('/sales', { products, customerId, paymentMethod })
     return data
   },
 

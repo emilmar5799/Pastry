@@ -4,12 +4,17 @@ import type { Product } from '../types/Product'
 interface CreateProductDTO {
   name: string
   price: number
+  description?: string
+  category?: string
+  status?: string
 }
 
 interface UpdateProductDTO {
   name: string
   price: number
-  active?: boolean
+  description?: string
+  category?: string
+  status?: string
 }
 
 const ProductService = {

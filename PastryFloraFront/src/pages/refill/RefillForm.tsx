@@ -23,7 +23,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 export default function RefillFormPage() {
-  const { id, productId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { role } = useAuth();
   const { modalConfig, isModalOpen, isLoading, showModal, hideModal, handleConfirm } = useModal();
@@ -39,9 +39,7 @@ export default function RefillFormPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [editingProduct, setEditingProduct] = useState<OrderProductWithDetails | null>(null);
 
-  const isEditMode = !!productId;
   const canEdit = role === 'ADMIN' || role === 'SUPERVISOR';
 
   useEffect(() => {
@@ -51,7 +49,7 @@ export default function RefillFormPage() {
     }
     
     loadData();
-  }, [id, productId]);
+  }, [id]);
 
   const loadData = async () => {
     if (!id) return;
@@ -71,27 +69,22 @@ export default function RefillFormPage() {
       
       setOrder(orderData);
 
-      // Cargar productos disponibles
-      const productsData = await ProductService.getAll();
-      setProducts(productsData.filter(p => p.active !== false));
+      // Cargar productos disponibles y existentes concurrentemente
+      const [productsData, existingProducts] = await Promise.all([
+        ProductService.getAll(),
+        OrderProductService.getByOrderId(Number(id))
+      ]);
 
-      // Si estamos editando, cargar el producto existente
-      if (isEditMode && productId) {
-        const existingProducts = await OrderProductService.getByOrderId(Number(id));
-        const productToEdit = existingProducts.find(p => p.id === Number(productId));
-        
-        if (productToEdit) {
-          setEditingProduct(productToEdit);
-          setSelectedProducts([{
-            product_id: productToEdit.product_id,
-            quantity: productToEdit.quantity,
-            name: productToEdit.name,
-            price: productToEdit.price
-          }]);
-        } else {
-          setError('Producto no encontrado');
-          navigate(`/refill/${id}`);
-        }
+      setProducts(productsData.filter(p => p.status !== 'Inactivo'));
+
+      // Cargar productos existentes si hay
+      if (existingProducts && existingProducts.length > 0) {
+        setSelectedProducts(existingProducts.map(p => ({
+          product_id: p.product_id,
+          quantity: p.quantity,
+          name: p.name,
+          price: p.price
+        })));
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -102,11 +95,9 @@ export default function RefillFormPage() {
   };
 
   const handleAddProduct = (product: Product) => {
-    // Verificar si el producto ya está seleccionado
     const existingIndex = selectedProducts.findIndex(p => p.product_id === product.id);
     
     if (existingIndex >= 0) {
-      // Si ya existe, incrementar cantidad
       const updated = [...selectedProducts];
       updated[existingIndex] = {
         ...updated[existingIndex],
@@ -114,7 +105,6 @@ export default function RefillFormPage() {
       };
       setSelectedProducts(updated);
     } else {
-      // Si no existe, agregar nuevo
       setSelectedProducts([
         ...selectedProducts,
         {
@@ -145,39 +135,22 @@ export default function RefillFormPage() {
   };
 
   const handleSubmit = async () => {
-    if (selectedProducts.length === 0) {
-      setError('Debe seleccionar al menos un producto');
-      return;
-    }
-
     setSubmitting(true);
     setError(null);
 
     try {
-      if (isEditMode && editingProduct) {
-        // Modo edición: actualizar solo un producto
-        await OrderProductService.updateQuantity(
-          editingProduct.id,
-          selectedProducts[0].quantity
-        );
-      } else {
-        // Modo creación: agregar productos
-        const productsToAdd = selectedProducts.map(p => ({
-          product_id: p.product_id,
-          quantity: p.quantity
-        }));
-        
-        await OrderProductService.addProducts(Number(id), {
-          products: productsToAdd
-        });
-      }
+      const productsToAdd = selectedProducts.map(p => ({
+        product_id: p.product_id,
+        quantity: p.quantity
+      }));
+      
+      await OrderProductService.setProducts(Number(id), {
+        products: productsToAdd
+      });
 
-      // Mostrar mensaje de éxito
       showModal({
-        title: isEditMode ? 'Producto Actualizado' : 'Productos Agregados',
-        message: isEditMode 
-          ? 'La cantidad del producto ha sido actualizada correctamente.'
-          : 'Los productos han sido agregados al pedido correctamente.',
+        title: 'Productos Guardados',
+        message: 'Los productos han sido guardados correctamente.',
         type: 'success',
         confirmText: 'Continuar',
         showCancel: false,
@@ -225,10 +198,7 @@ export default function RefillFormPage() {
           <ExclamationTriangleIcon className="w-16 h-16 text-amber-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-700 mb-2">Acceso denegado</h3>
           <p className="text-gray-500 mb-4">No tienes permisos para gestionar productos.</p>
-          <Link
-            to="/refill"
-            className="text-orange-600 hover:text-orange-700 font-medium"
-          >
+          <Link to="/refill" className="text-orange-600 hover:text-orange-700 font-medium">
             ← Volver a Preparación
           </Link>
         </div>
@@ -241,9 +211,7 @@ export default function RefillFormPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {isEditMode ? 'Cargando producto...' : 'Cargando productos disponibles...'}
-          </p>
+          <p className="text-gray-600">Cargando datos...</p>
         </div>
       </div>
     );
@@ -256,10 +224,7 @@ export default function RefillFormPage() {
           <XCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-700 mb-2">Error</h3>
           <p className="text-gray-500 mb-4">{error || 'Pedido no encontrado'}</p>
-          <Link
-            to="/refill"
-            className="text-orange-600 hover:text-orange-700 font-medium"
-          >
+          <Link to="/refill" className="text-orange-600 hover:text-orange-700 font-medium">
             ← Volver a Preparación
           </Link>
         </div>
@@ -269,7 +234,6 @@ export default function RefillFormPage() {
 
   return (
     <div className="space-y-6">
-      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={hideModal}
@@ -281,7 +245,6 @@ export default function RefillFormPage() {
           <p className="text-gray-700 leading-relaxed">
             {modalConfig?.message}
           </p>
-          
           <ModalButtons
             onConfirm={modalConfig?.onConfirm ? handleConfirm : undefined}
             onCancel={modalConfig?.showCancel ? hideModal : undefined}
@@ -293,7 +256,6 @@ export default function RefillFormPage() {
         </div>
       </Modal>
 
-      {/* Header */}
       <div className="bg-gradient-to-r from-orange-500/10 to-orange-600/5 rounded-2xl p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -302,19 +264,11 @@ export default function RefillFormPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-800">
-                {isEditMode ? 'Editar Producto' : 'Agregar Productos'} - Pedido #{order.id}
+                Administrar Productos - Pedido #{order.id}
               </h1>
               <p className="text-gray-600 mt-1">
-                {order.customer_name} • {order.event || 'Evento'} • {formatDate(order.delivery_datetime)}
+                {order.customer_name} • {order.event || 'Evento'} • {formatDate(order.delivery_date || order.delivery_datetime)}
               </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-                  {isEditMode ? 'Modo Edición' : 'Agregando Productos'}
-                </span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                  {role}
-                </span>
-              </div>
             </div>
           </div>
           <Link
@@ -337,87 +291,39 @@ export default function RefillFormPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lista de productos disponibles */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-6">
-              Productos Disponibles {isEditMode && '(Edición)'}
+              Productos Disponibles
             </h2>
             
-            {isEditMode ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-blue-700 font-medium mb-2">Editando producto:</p>
-                  <p className="font-bold text-blue-800">{editingProduct?.name}</p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Precio unitario: {formatCurrency(editingProduct?.price || 0)}
-                  </p>
-                </div>
-                
-                <div className="p-4 bg-white border border-gray-300 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cantidad
-                  </label>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => handleUpdateQuantity(selectedProducts[0]?.product_id, (selectedProducts[0]?.quantity || 1) - 1)}
-                      className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg"
-                    >
-                      <MinusCircleIcon className="w-6 h-6" />
-                    </button>
-                    
-                    <input
-                      type="number"
-                      min="1"
-                      value={selectedProducts[0]?.quantity || 1}
-                      onChange={(e) => handleUpdateQuantity(selectedProducts[0]?.product_id, parseInt(e.target.value) || 1)}
-                      className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center text-lg font-bold"
-                    />
-                    
-                    <button
-                      onClick={() => handleUpdateQuantity(selectedProducts[0]?.product_id, (selectedProducts[0]?.quantity || 1) + 1)}
-                      className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg"
-                    >
-                      <PlusCircleIcon className="w-6 h-6" />
-                    </button>
-                    
-                    <span className="text-gray-600 ml-4">
-                      Subtotal: <span className="font-bold text-green-600">
-                        {formatCurrency((selectedProducts[0]?.price || 0) * (selectedProducts[0]?.quantity || 1))}
-                      </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {products.map(product => (
+                <div
+                  key={product.id}
+                  className="p-4 border border-gray-300 rounded-lg hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer"
+                  onClick={() => handleAddProduct(product)}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                    </div>
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
+                      {formatCurrency(product.price)}
                     </span>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {products.map(product => (
-                  <div
-                    key={product.id}
-                    className="p-4 border border-gray-300 rounded-lg hover:border-orange-300 hover:bg-orange-50/50 transition-all cursor-pointer"
-                    onClick={() => handleAddProduct(product)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                      </div>
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">
-                        {formatCurrency(product.price)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-3">
-                      <span className="text-xs text-gray-500">ID: {product.id}</span>
-                      <div className="flex items-center gap-2 text-orange-600">
-                        <PlusCircleIcon className="w-4 h-4" />
-                        <span className="text-sm font-medium">Agregar</span>
-                      </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className="text-xs text-gray-500">ID: {product.id}</span>
+                    <div className="flex items-center gap-2 text-orange-600">
+                      <PlusCircleIcon className="w-4 h-4" />
+                      <span className="text-sm font-medium">Agregar</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
 
-            {!isEditMode && products.length === 0 && (
+            {products.length === 0 && (
               <div className="text-center py-8">
                 <CakeIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-400 text-lg font-medium">No hay productos disponibles</p>
@@ -427,9 +333,7 @@ export default function RefillFormPage() {
           </div>
         </div>
 
-        {/* Resumen y acciones */}
         <div className="lg:col-span-1 space-y-6">
-          {/* Resumen del pedido */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="font-semibold text-gray-700 mb-4">Resumen del Pedido</h3>
             <div className="space-y-3">
@@ -445,23 +349,22 @@ export default function RefillFormPage() {
                 <CalendarDaysIcon className="w-5 h-5 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-600">Entrega</p>
-                  <p className="font-semibold">{formatDate(order.delivery_datetime)}</p>
+                  <p className="font-semibold">{formatDate(order.delivery_date || order.delivery_datetime)}</p>
                 </div>
               </div>
               
-              {order.event && (
+              {order.event_type && (
                 <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                   <div className="flex items-center gap-2">
                     <CakeIcon className="w-5 h-5 text-orange-500" />
                     <span className="font-semibold text-orange-800">Evento:</span>
                   </div>
-                  <p className="font-bold text-orange-700 mt-1">{order.event}</p>
+                  <p className="font-bold text-orange-700 mt-1">{order.event_type}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Productos seleccionados */}
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-700">Productos Seleccionados</h3>
@@ -473,9 +376,9 @@ export default function RefillFormPage() {
             {selectedProducts.length === 0 ? (
               <div className="text-center py-6">
                 <ShoppingCartIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-400">No hay productos seleccionados</p>
+                <p className="text-gray-400">Ningún producto</p>
                 <p className="text-gray-500 text-sm mt-1">
-                  {isEditMode ? 'Ajusta la cantidad' : 'Selecciona productos de la lista'}
+                  Selecciona productos de la lista
                 </p>
               </div>
             ) : (
@@ -489,87 +392,67 @@ export default function RefillFormPage() {
                           {formatCurrency(product.price)} c/u
                         </p>
                       </div>
-                      {!isEditMode && (
-                        <button
-                          onClick={() => handleRemoveProduct(product.product_id)}
-                          className="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <XCircleIcon className="w-5 h-5" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleRemoveProduct(product.product_id)}
+                        className="p-1 text-red-500 hover:text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <XCircleIcon className="w-5 h-5" />
+                      </button>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {!isEditMode && (
-                          <>
-                            <button
-                              onClick={() => handleUpdateQuantity(product.product_id, product.quantity - 1)}
-                              className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                            >
-                              <MinusCircleIcon className="w-4 h-4" />
-                            </button>
-                            <span className="px-2 font-medium">{product.quantity}</span>
-                            <button
-                              onClick={() => handleUpdateQuantity(product.product_id, product.quantity + 1)}
-                              className="p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded"
-                            >
-                              <PlusCircleIcon className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                        {isEditMode && (
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                            {product.quantity} unidad{product.quantity !== 1 ? 'es' : ''}
-                          </span>
-                        )}
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-2 mt-2">
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleUpdateQuantity(product.product_id, product.quantity - 1)}
+                          className="p-1 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded"
+                        >
+                          <MinusCircleIcon className="w-5 h-5" />
+                        </button>
+                        <span className="font-medium w-6 text-center">{product.quantity}</span>
+                        <button
+                          onClick={() => handleUpdateQuantity(product.product_id, product.quantity + 1)}
+                          className="p-1 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded"
+                        >
+                          <PlusCircleIcon className="w-5 h-5" />
+                        </button>
                       </div>
-                      
-                      <span className="font-bold text-green-600">
+                      <span className="font-bold text-gray-800">
                         {formatCurrency(product.price * product.quantity)}
                       </span>
                     </div>
                   </div>
                 ))}
-                
-                {/* Total */}
-                <div className="pt-4 mt-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-gray-700">TOTAL:</span>
-                    <span className="text-xl font-bold text-green-700">
-                      {formatCurrency(calculateTotal())}
-                    </span>
-                  </div>
-                </div>
               </div>
             )}
-          </div>
 
-          {/* Botón de acción */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || selectedProducts.length === 0}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  {isEditMode ? 'Actualizando...' : 'Guardando...'}
-                </>
-              ) : (
-                <>
-                  <CheckCircleIcon className="w-5 h-5" />
-                  {isEditMode ? 'Actualizar Producto' : 'Agregar al Pedido'}
-                </>
-              )}
-            </button>
-            
-            <p className="text-xs text-gray-500 mt-3 text-center">
-              {isEditMode 
-                ? 'La cantidad modificada se actualizará en el pedido.'
-                : 'Los productos seleccionados se agregarán al pedido.'}
-            </p>
+            {selectedProducts.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-gray-600 font-medium">Total:</span>
+                  <span className="text-xl font-bold text-green-600">
+                    {formatCurrency(calculateTotal())}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium py-3 px-4 rounded-xl hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Guardando...
+                    </div>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="w-6 h-6" />
+                      Guardar Todo
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

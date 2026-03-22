@@ -128,7 +128,7 @@ export default function Products() {
   }
 
   // Solo mostramos productos activos (los eliminados no se ven)
-  const activeProducts = products.filter(p => p.active)
+  const activeProducts = products.filter(p => p.status !== 'Inactivo')
 
   return (
     <div className="space-y-6">

@@ -16,6 +16,6 @@ router.get('/', controller.list);
 router.get('/:id', controller.getById);
 router.put('/:id', controller.update);
 router.use(allowRoles('ADMIN', 'SUPERVISOR'));
-router.delete('/:id', controller.cancel);
+router.delete('/:id', controller.remove);
 
 export default router;

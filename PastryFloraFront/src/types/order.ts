@@ -7,12 +7,21 @@ export type OrderStatus =
 
 export type OrderType = 'SMALL' | 'LARGE';
 
+export interface OrderProduct {
+  id: number;
+  product_id: number;
+  quantity: number;
+  name?: string;
+  price?: number;
+}
+
 export interface Order {
   id: number;
   branch_id: number;
-  created_by: number;
+  employee_id: number;
+  customer_id: number;
 
-  delivery_datetime: string;
+  delivery_date: string;
   customer_name: string;
   customer_ci?: string;
   phone?: string;
@@ -22,11 +31,12 @@ export interface Order {
 
   specifications?: string;
   advance: number;
-  event?: string;
+  event_type?: string;
   warranty?: string;
 
   status: OrderStatus;
   type: OrderType;
+  products: OrderProduct[];
 
   created_at: string;
 }
