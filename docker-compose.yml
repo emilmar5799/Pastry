@@ -10,6 +10,7 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./init_pastry_db.sql:/docker-entrypoint-initdb.d/init_pastry_db.sql
 
   backend:
     build:
@@ -22,11 +23,15 @@ services:
     environment:
       - DB_HOST=db
       - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=Pastry
     volumes:
       - ./PastryFloraBack:/app
       - /app/node_modules
     depends_on:
       - db
+    command: ["sh", "-c", "sleep 15 && npx ts-node insertBranches.ts && npx ts-node insertTestUser.ts && npm run dev"]
 
   frontend:
     build:
