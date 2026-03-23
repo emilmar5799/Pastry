@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
@@ -10,6 +8,41 @@ services:
       MYSQL_DATABASE: Pastry
     ports:
       - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./PastryFloraBack
+      dockerfile: Dockerfile
+    container_name: pastry_backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+    volumes:
+      - ./PastryFloraBack:/app
+      - /app/node_modules
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./PastryFloraFront
+      dockerfile: Dockerfile
+    container_name: pastry_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    volumes:
+      - ./PastryFloraFront:/app
+      - /app/node_modules
+    depends_on:
+      - backend
 
 volumes:
   mysql_data:
