@@ -4,5 +4,5 @@ export interface Customer {
   phone?: string;
   ci?: string;
   email?: string;
-  created_at: string;
+  registration_date: string;
 }

@@ -14,6 +14,7 @@ export default function UserForm({ user, onSuccess }: Props) {
     email: '',
     password: '',
     role: 'SELLER' as UserRole,
+    salary: '',
     phones: [''],
   })
   const [loading, setLoading] = useState(false)
@@ -27,6 +28,7 @@ export default function UserForm({ user, onSuccess }: Props) {
         email: user.email,
         password: '', // No mostrar password en edición
         role: user.role,
+        salary: user.salary ? String(user.salary) : '',
         phones: user.phones && user.phones.length > 0 ? user.phones : [''],
       })
     } else {
@@ -37,6 +39,7 @@ export default function UserForm({ user, onSuccess }: Props) {
         email: '',
         password: '',
         role: 'SELLER',
+        salary: '',
         phones: [''],
       })
     }
@@ -70,27 +73,35 @@ export default function UserForm({ user, onSuccess }: Props) {
       
       if (user) {
         // Editar usuario existente
-        await updateUser(user.id, {
+        const updateData: any = {
           first_name: form.first_name,
           last_name: form.last_name,
           email: form.email,
           role: form.role,
           phones: phonesToSend.length > 0 ? phonesToSend : undefined,
-        })
+        }
+        if (form.salary) {
+          updateData.salary = parseFloat(form.salary)
+        }
+        await updateUser(user.id, updateData)
       } else {
         // Crear nuevo usuario
         if (!form.password) {
           throw new Error('La contraseña es requerida')
         }
         
-        await createUser({
+        const createData: any = {
           first_name: form.first_name,
           last_name: form.last_name,
           email: form.email,
           password: form.password,
           role: form.role,
           phones: phonesToSend,
-        })
+        }
+        if (form.salary) {
+          createData.salary = parseFloat(form.salary)
+        }
+        await createUser(createData)
       }
 
       // Resetear formulario
@@ -100,6 +111,7 @@ export default function UserForm({ user, onSuccess }: Props) {
         email: '',
         password: '',
         role: 'SELLER',
+        salary: '',
         phones: [''],
       })
       
@@ -220,10 +232,35 @@ export default function UserForm({ user, onSuccess }: Props) {
           >
             <option value="ADMIN">Administrador</option>
             <option value="SUPERVISOR">Supervisor</option>
+            <option value="CONTADOR">Contador</option>
+            <option value="PANADERO">Panadero</option>
+            <option value="DECORADOR">Decorador</option>
             <option value="SELLER">Vendedor</option>
             <option value="REFILL">Rellenador</option>
           </select>
         </div>
+
+        {/* Salario (solo para empleados) */}
+        {['CONTADOR', 'PANADERO', 'DECORADOR', 'SELLER', 'REFILL'].includes(form.role) && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Salario (Bs)
+            </label>
+            <input
+              type="number"
+              placeholder="Ej: 2000"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+              value={form.salary}
+              onChange={e => setForm({ ...form, salary: e.target.value })}
+              step="0.01"
+              min="0"
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Campo es opcional. Deja vacío si no deseas asignar salario.
+            </p>
+          </div>
+        )}
 
         {/* Teléfonos */}
         <div>

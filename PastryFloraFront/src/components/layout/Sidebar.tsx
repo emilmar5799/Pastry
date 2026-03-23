@@ -9,7 +9,11 @@ import {
   InboxIcon,
   UserCircleIcon,
   UserGroupIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  BriefcaseIcon,
+  ClockIcon,
+  DocumentChartBarIcon,
+  GiftIcon
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -27,7 +31,11 @@ const iconMap: Record<string, React.FC<{className?: string}>> = {
   '/reports': ChartBarIcon,
   '/products': CubeIcon,
   '/refill': InboxIcon,
-  '/users': UserCircleIcon
+  '/users': UserCircleIcon,
+  '/hr/employees': BriefcaseIcon,
+  '/hr/attendance': ClockIcon,
+  '/hr/payroll': DocumentChartBarIcon,
+  '/hr/bonuses': GiftIcon
 }
 
 const menu = [
@@ -39,6 +47,13 @@ const menu = [
   { label: 'Productos', path: '/products', roles: ['ADMIN', 'SUPERVISOR'] },
   { label: 'Rellenar', path: '/refill', roles: ['ADMIN', 'SUPERVISOR', 'REFILL'] },
   { label: 'Usuarios', path: '/users', roles: ['ADMIN'] },
+]
+
+// Submenu RRHH (Recursos Humanos)
+const hrMenu = [
+  { label: 'Empleados', path: '/hr/employees', roles: ['ADMIN', 'SUPERVISOR'], icon: BriefcaseIcon },
+  { label: 'Asistencia', path: '/hr/attendance', roles: ['ADMIN', 'SUPERVISOR'], icon: ClockIcon },
+  { label: 'Nóminas', path: '/hr/payroll', roles: ['ADMIN', 'SUPERVISOR'], icon: DocumentChartBarIcon },
 ]
 
 export default function Sidebar({ isOpen, onClose }: Props) {
@@ -125,38 +140,83 @@ export default function Sidebar({ isOpen, onClose }: Props) {
           </div>
           
           {filteredMenu.length > 0 ? (
-            filteredMenu.map(item => {
-              const Icon = iconMap[item.path] || HomeIcon
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
-                  onClick={() => {
-                    if (window.innerWidth < 768) onClose()
-                  }}
-                  className={({ isActive }) =>
-                    `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-primary/20 to-primary/10 border-l-4 border-primary shadow-lg' 
-                        : 'hover:bg-white/5 hover:pl-5'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <div className={`p-2 rounded-lg ${isActive ? 'bg-primary' : 'bg-white/10 group-hover:bg-primary/30'}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="font-medium">{item.label}</span>
-                      {isActive && (
-                        <div className="ml-auto w-2 h-2 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              )
-            })
+            <>
+              {filteredMenu.map(item => {
+                const Icon = iconMap[item.path] || HomeIcon
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/'}
+                    onClick={() => {
+                      if (window.innerWidth < 768) onClose()
+                    }}
+                    className={({ isActive }) =>
+                      `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-gradient-to-r from-primary/20 to-primary/10 border-l-4 border-primary shadow-lg' 
+                          : 'hover:bg-white/5 hover:pl-5'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <div className={`p-2 rounded-lg ${isActive ? 'bg-primary' : 'bg-white/10 group-hover:bg-primary/30'}`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <span className="font-medium">{item.label}</span>
+                        {isActive && (
+                          <div className="ml-auto w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                )
+              })}
+
+              {/* Sección RRHH */}
+              {hrMenu.some(item => item.roles.includes(role || '')) && (
+                <>
+                  <div className="px-2 mt-6 mb-3 pt-4 border-t border-white/10">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Recursos Humanos
+                    </p>
+                  </div>
+                  {hrMenu.map(item => {
+                    if (!item.roles.includes(role || '')) return null
+                    const Icon = item.icon
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => {
+                          if (window.innerWidth < 768) onClose()
+                        }}
+                        className={({ isActive }) =>
+                          `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-gradient-to-r from-primary/20 to-primary/10 border-l-4 border-primary shadow-lg' 
+                              : 'hover:bg-white/5 hover:pl-5'
+                          }`
+                        }
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <div className={`p-2 rounded-lg ${isActive ? 'bg-primary' : 'bg-white/10 group-hover:bg-primary/30'}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <span className="font-medium">{item.label}</span>
+                            {isActive && (
+                              <div className="ml-auto w-2 h-2 bg-primary rounded-full animate-pulse" />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    )
+                  })}
+                </>
+              )}
+            </>
           ) : role ? (
             <div className="text-center p-6">
               <div className="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4">

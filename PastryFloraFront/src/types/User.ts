@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'REFILL'
+export type UserRole = 'ADMIN' | 'SUPERVISOR' | 'CONTADOR' | 'PANADERO' | 'DECORADOR' | 'SELLER' | 'REFILL'
 
 export interface User {
   id: number

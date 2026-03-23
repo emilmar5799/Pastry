@@ -13,6 +13,7 @@ import usersRoutes from './routes/user.routes';
 import reportRoutes from './routes/report.routes';
 import branchRoutes from './routes/branch.routes';
 import customerRoutes from './routes/customer.routes';
+import hrRoutes from './routes/hr.routes';
 
 const app = express();
 
@@ -46,6 +47,9 @@ app.use('/api/sales', saleProductRoutes);
 app.use('/api/reports', reportRoutes);
 //  USERS (ADMIN ONLY)
 app.use('/api/users', usersRoutes);
+
+//  HR MODULE (ADMIN & SUPERVISOR)
+app.use('/api/hr', hrRoutes);
 
 // NEW ENDPOINTS
 app.use('/api/branches', branchRoutes);

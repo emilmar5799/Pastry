@@ -87,7 +87,7 @@ export default function Customers() {
                    {customer.name}
                  </h3>
                  <div className="text-xs text-gray-400 mt-1">
-                   Registrado: {formatDateTimeForDisplay(utcToBoliviaTime(customer.created_at))}
+                   Registrado: {formatDateTimeForDisplay(utcToBoliviaTime(customer.registration_date))}
                  </div>
                </div>
              </div>

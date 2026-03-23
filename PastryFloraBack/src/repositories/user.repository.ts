@@ -5,7 +5,7 @@ import { User } from '../models/user.model'
 
 export const findUserByEmail = async (email: string): Promise<User | null> => {
   const [rows] = await db.query<any[]>(
-    'SELECT * FROM users WHERE email = ? AND active = true',
+    'SELECT * FROM users WHERE email = ? AND active = 1',
     [email]
   )
   return rows.length ? rows[0] : null
@@ -13,14 +13,14 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
 
 export const findAllUsers = async (): Promise<any[]> => {
   const [rows] = await db.query<any[]>(
-    `SELECT * FROM users WHERE active = true`
+    `SELECT * FROM users WHERE active = 1`
   )
   return rows
 }
 
 export const findInactiveUsers = async (): Promise<any[]> => {
   const [rows] = await db.query<any[]>(
-    `SELECT * FROM users WHERE active = false`
+    `SELECT * FROM users WHERE active = 0`
   )
   return rows
 }
@@ -59,11 +59,11 @@ export const updateUser = async (id: number, data: Partial<User>) => {
 }
 
 export const softDeleteUser = async (id: number) => {
-  await db.query('UPDATE users SET active=false WHERE id=?', [id])
+  await db.query('UPDATE users SET active=0 WHERE id=?', [id])
 }
 
 export const reactivateUser = async (id: number) => {
-  await db.query('UPDATE users SET active=true WHERE id=?', [id])
+  await db.query('UPDATE users SET active=1 WHERE id=?', [id])
 }
 
 /* ===================== END ===================== */

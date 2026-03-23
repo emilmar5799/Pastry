@@ -10,4 +10,4 @@ export interface User {
   created_at: Date;
 }
 
-export type UserRole = 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'REFILL';
+export type UserRole = 'ADMIN' | 'SUPERVISOR' | 'SELLER' | 'REFILL' | 'CONTADOR' | 'PANADERO' | 'DECORADOR';

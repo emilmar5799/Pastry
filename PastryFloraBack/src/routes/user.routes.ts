@@ -6,17 +6,16 @@ import { allowRoles } from '../middlewares/role.middleware'
 const router = Router()
 
 router.use(authMiddleware)
-router.use(allowRoles('ADMIN'))
 
-router.post('/', controller.createUser)
+// GET endpoints: ADMIN y SUPERVISOR
+router.get('/', allowRoles('ADMIN', 'SUPERVISOR'), controller.getUsers)
+router.get('/inactive', allowRoles('ADMIN', 'SUPERVISOR'), controller.getInactiveUsers)
+router.get('/:id', allowRoles('ADMIN', 'SUPERVISOR'), controller.getUserById)
 
-router.get('/', controller.getUsers)
-router.get('/inactive', controller.getInactiveUsers)
-router.get('/:id', controller.getUserById)
-
-router.put('/:id', controller.updateUser)
-
-router.delete('/:id', controller.deleteUser)
-router.patch('/:id/reactivate', controller.reactivateUser)
+// POST, PUT, DELETE: Solo ADMIN
+router.post('/', allowRoles('ADMIN'), controller.createUser)
+router.put('/:id', allowRoles('ADMIN'), controller.updateUser)
+router.delete('/:id', allowRoles('ADMIN'), controller.deleteUser)
+router.patch('/:id/reactivate', allowRoles('ADMIN'), controller.reactivateUser)
 
 export default router

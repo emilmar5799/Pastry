@@ -21,6 +21,9 @@ import OrderFill from '../pages/orders/OrderFill'
 import RefillDetailPage from '../pages/refill/RefillDetail'
 import RefillFormPage from '../pages/refill/RefillForm'
 import Customers from '../pages/customers/Customers'
+import Employees from '../pages/hr/Employees'
+import AttendancePage from '../pages/hr/Attendance'
+import PayrollPage from '../pages/hr/Payroll'
 
 import Login from '../pages/auth/Login'
 import NotFound from '../pages/NotFound'
@@ -94,6 +97,21 @@ export default function AppRouter() {
           path="/refill"
           element={<ProtectedRoute allowedRoles={['ADMIN','SUPERVISOR','REFILL']}><Refill /></ProtectedRoute>}
         />
+
+        {/* HR Module - RRHH */}
+        <Route
+          path="/hr/employees"
+          element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}><Employees /></ProtectedRoute>}
+        />
+        <Route
+          path="/hr/attendance"
+          element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}><AttendancePage /></ProtectedRoute>}
+        />
+        <Route
+          path="/hr/payroll"
+          element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPERVISOR']}><PayrollPage /></ProtectedRoute>}
+        />
+
       </Route>
 
       <Route path="*" element={<NotFound />} />
