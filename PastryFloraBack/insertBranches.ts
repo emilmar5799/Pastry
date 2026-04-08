@@ -12,6 +12,12 @@ async function run() {
       port: Number(process.env.DB_PORT) || 3306
     });
 
+    const [rows]: any = await connection.query('SELECT * FROM branches WHERE name = ?', ['pastryflora 8']);
+    if (rows.length > 0) {
+      console.log('Sucursales ya existen. Omitiendo inserción.');
+      process.exit(0);
+    }
+
     await connection.query(
       'INSERT INTO branches (name, address) VALUES (?, ?)',
       ['pastryflora 8', 'Dirección sucursal 8']
