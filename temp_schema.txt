@@ -1,0 +1,8 @@
+﻿Field	Type	Null	Key	Default	Extra
+id	int	NO	PRI	NULL	auto_increment
+user_id	int	NO	MUL	NULL	
+base_salary	decimal(10,2)	NO		NULL	
+bonuses	decimal(10,2)	YES		0.00	
+deductions	decimal(10,2)	YES		0.00	
+final_salary	decimal(10,2)	NO		NULL	
+payment_date	date	NO		NULL	
