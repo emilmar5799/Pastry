@@ -16,12 +16,14 @@ def get_sales_data():
     engine = get_engine()
     query = """
     SELECT 
-        s.date_key, d.full_date, d.month_name, d.year,
+        s.date_key, d.full_date, d.month, d.month_name, d.year, d.day_of_week,
         s.quantity, s.unit_price, s.subtotal, s.payment_method,
-        p.name as product_name, p.category
+        p.name as product_name, p.category,
+        b.name as branch_name
     FROM Fact_Sales s
     JOIN Dim_Date d ON s.date_key = d.date_key
     JOIN Dim_Product p ON s.product_key = p.product_key
+    LEFT JOIN Dim_Branch b ON s.branch_key = b.branch_key
     """
     return pd.read_sql(query, engine)
 
@@ -71,18 +73,63 @@ try:
         col2.metric("Total Operaciones", len(df_sales))
         col3.metric("Unidades Vendidas", df_sales['quantity'].sum())
         
-        col_fig1, col_fig2 = st.columns(2)
+        # Tabs for better organization
+        tab1, tab2, tab3 = st.tabs(["Resumen y Tendencias", "Análisis Temporal", "Análisis de Producto y Sucursal"])
         
-        # Grafico 1
-        cat_sales = df_sales.groupby('category')['subtotal'].sum().reset_index()
-        fig1 = px.pie(cat_sales, values='subtotal', names='category', title='Ventas por Categoría', hole=0.4)
-        col_fig1.plotly_chart(fig1, width='stretch')
-        
-        # Grafico 2
-        daily_sales = df_sales.groupby('full_date')['subtotal'].sum().reset_index()
-        fig2 = px.line(daily_sales, x='full_date', y='subtotal', title='Tendencia de Ventas Diarias', markers=True)
-        col_fig2.plotly_chart(fig2, width='stretch')
-        
+        with tab1:
+            col_fig1, col_fig2 = st.columns(2)
+            # Grafico 1
+            cat_sales = df_sales.groupby('category')['subtotal'].sum().reset_index()
+            fig1 = px.pie(cat_sales, values='subtotal', names='category', title='Ventas por Categoría', hole=0.4)
+            col_fig1.plotly_chart(fig1, use_container_width=True)
+            
+            # Grafico 2
+            daily_sales = df_sales.groupby('full_date')['subtotal'].sum().reset_index()
+            fig2 = px.line(daily_sales, x='full_date', y='subtotal', title='Tendencia de Ventas Diarias (Histórico)', markers=True)
+            col_fig2.plotly_chart(fig2, use_container_width=True)
+            
+        with tab2:
+            st.subheader("Análisis de Ventas en el Tiempo")
+            col_t1, col_t2 = st.columns(2)
+            
+            # Ventas por Año
+            yearly_sales = df_sales.groupby('year')['subtotal'].sum().reset_index()
+            fig_year = px.bar(yearly_sales, x='year', y='subtotal', title='Ventas por Año', text_auto='.2s')
+            fig_year.update_layout(xaxis_type='category')
+            col_t1.plotly_chart(fig_year, use_container_width=True)
+            
+            # Ventas por Mes
+            # Sort by month number
+            monthly_sales = df_sales.groupby(['month', 'month_name'])['subtotal'].sum().reset_index()
+            monthly_sales = monthly_sales.sort_values('month')
+            fig_month = px.bar(monthly_sales, x='month_name', y='subtotal', title='Ventas por Mes', text_auto='.2s')
+            col_t2.plotly_chart(fig_month, use_container_width=True)
+            
+            # Ventas por Día de la Semana
+            st.markdown("### Ventas por Día de la Semana")
+            # Create a categorical order for days of week
+            days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            df_sales['day_of_week'] = pd.Categorical(df_sales['day_of_week'], categories=days_order, ordered=True)
+            dow_sales = df_sales.groupby('day_of_week', observed=False)['subtotal'].sum().reset_index()
+            fig_dow = px.bar(dow_sales, x='day_of_week', y='subtotal', title='Ventas por Día de la Semana', text_auto='.2s')
+            st.plotly_chart(fig_dow, use_container_width=True)
+            
+        with tab3:
+            col_p1, col_p2 = st.columns(2)
+            
+            # Top 10 Productos
+            top_products = df_sales.groupby('product_name')['subtotal'].sum().nlargest(10).reset_index()
+            fig_prod = px.bar(top_products, x='subtotal', y='product_name', orientation='h', title='Top 10 Productos Más Vendidos')
+            fig_prod.update_layout(yaxis={'categoryorder':'total ascending'})
+            col_p1.plotly_chart(fig_prod, use_container_width=True)
+            
+            # Ventas por Sucursal
+            if 'branch_name' in df_sales.columns:
+                df_branches = df_sales.fillna({'branch_name': 'Sin Sucursal'})
+                branch_sales = df_branches.groupby('branch_name')['subtotal'].sum().reset_index()
+                fig_branch = px.pie(branch_sales, values='subtotal', names='branch_name', title='Ventas por Sucursal', hole=0.3)
+                col_p2.plotly_chart(fig_branch, use_container_width=True)
+
         st.subheader("Ventas Detalladas")
         st.dataframe(df_sales.head(10))
     else:
